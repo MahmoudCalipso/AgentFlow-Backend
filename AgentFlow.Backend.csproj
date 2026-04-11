@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <PublishAot>true</PublishAot>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <IlcOptimizationPreference>Speed</IlcOptimizationPreference>
+  </PropertyGroup>
+  <ItemGroup>
+
+    <PackageReference Include="Microsoft.SemanticKernel" Version="*-*" />
+    <PackageReference Include="Microsoft.SemanticKernel.Connectors.Qdrant" Version="*-*" />
+    <PackageReference Include="Microsoft.SemanticKernel.Connectors.OpenAI" Version="*-*" />
+    <PackageReference Include="Qdrant.Client" Version="*-*" />
+    <PackageReference Include="Quartz.Extensions.DependencyInjection" Version="3.17.1" />
+    <PackageReference Include="Wasmtime" Version="*-*" />
+    <PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="*-*" />
+    <PackageReference Include="Quartz.Extensions.Hosting" Version="3.17.1" />
+    <PackageReference Include="LibGit2Sharp" Version="*-*" />
+    <PackageReference Include="Serilog.AspNetCore" Version="*-*" />
+    <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="*-*" />
+    <PackageReference Include="FluentValidation" Version="*-*" />
+
+    <PackageReference Include="Microsoft.Extensions.Http.Resilience" Version="*-*" />
+    <PackageReference Include="StackExchange.Redis" Version="*-*" />
+    <PackageReference Include="supabase-csharp" Version="0.16.1" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+    <PackageReference Include="Jint" Version="3.1.20" />
+    <PackageReference Include="IronPython" Version="3.4.1" />
+    <PackageReference Include="Microsoft.Playwright" Version="1.42.0" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,50 @@
+# .gitignore for AgentFlow.Backend
+
+# Build artifacts
+[Bb]in/
+[Oo]bj/
+out/
+
+# IDE - Visual Studio
+.vs/
+*.user
+*.userosscache
+*.sln.docstates
+
+# IDE - VS Code
+.vscode/
+
+# Package managers
+node_modules/
+dist/
+.npm/
+
+# Playwright binaries (downloaded at runtime)
+.playwright/
+bin/*/publish/.playwright/
+
+# Native AOT publish artifacts
+*.exe
+*.dll
+*.pdb
+*.config
+*.json
+!appsettings.json
+!appsettings.*.json
+!manifest.json
+!package.json
+
+# User-specific / Local settings
+.env
+.env.*
+secrets.json
+
+# OS generated
+.DS_Store
+Thumbs.db
+
+# Large data/logs
+logs/
+*.log
+temp/
+tmp/
