@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Text.Json;
+using System.Text.Json.Serialization.Metadata;
 using System.Threading;
 using System.Threading.Tasks;
+using AgentFlow.Backend.Core.Serialization;
 using Microsoft.Extensions.Logging;
 using StackExchange.Redis;
 
@@ -12,7 +14,6 @@ public sealed class RedisStateStore : IExecutionStateStore
 {
     private readonly IConnectionMultiplexer _redis;
     private readonly ILogger<RedisStateStore> _log;
-    private readonly JsonSerializerOptions _jsonOpts = new() { WriteIndented = false };
     private static readonly TimeSpan _ttl = TimeSpan.FromHours(24);
 
     public RedisStateStore(IConnectionMultiplexer redis, ILogger<RedisStateStore> log)
@@ -37,14 +38,19 @@ public sealed class RedisStateStore : IExecutionStateStore
         }
 
         if (!val.HasValue) return default;
-        return JsonSerializer.Deserialize<T>(val.ToString(), _jsonOpts);
+        
+        var typeInfo = (JsonTypeInfo<T>)AgentFlowJsonContext.Default.GetTypeInfo(typeof(T))!;
+        return JsonSerializer.Deserialize(val.ToString(), typeInfo);
     }
 
     public async Task SetAsync<T>(string corrId, string nodeId, T state, CancellationToken ct)
     {
         var db = _redis.GetDatabase();
         var key = BuildKey(corrId, nodeId);
-        var json = JsonSerializer.Serialize(state, _jsonOpts);
+        
+        var typeInfo = (JsonTypeInfo<T>)AgentFlowJsonContext.Default.GetTypeInfo(typeof(T))!;
+        var json = JsonSerializer.Serialize(state, typeInfo);
+
         try
         {
             await db.StringSetAsync(key, json, _ttl);
@@ -59,7 +65,10 @@ public sealed class RedisStateStore : IExecutionStateStore
     public async Task AppendAsync<T>(string key, T value)
     {
         var db = _redis.GetDatabase();
-        var json = JsonSerializer.Serialize(value, _jsonOpts);
+        
+        var typeInfo = (JsonTypeInfo<T>)AgentFlowJsonContext.Default.GetTypeInfo(typeof(T))!;
+        var json = JsonSerializer.Serialize(value, typeInfo);
+
         try
         {
             await db.ListRightPushAsync(key, json);
@@ -76,11 +85,14 @@ public sealed class RedisStateStore : IExecutionStateStore
     {
         var db = _redis.GetDatabase();
         var items = await db.ListRangeAsync(key, 0, -1);
+        
+        var typeInfo = (JsonTypeInfo<T>)AgentFlowJsonContext.Default.GetTypeInfo(typeof(T))!;
+
         foreach (var item in items)
         {
             if (item.HasValue)
             {
-                var val = JsonSerializer.Deserialize<T>(item.ToString(), _jsonOpts);
+                var val = JsonSerializer.Deserialize(item.ToString(), typeInfo);
                 if (val != null) yield return val;
             }
         }

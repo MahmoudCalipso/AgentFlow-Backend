@@ -1,0 +1,34 @@
+{
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft.AspNetCore": "Warning"
+    }
+  },
+  "AllowedHosts": "*",
+  "AgentFlow": {
+    "Supabase": {
+      "Url": "https://YOUR_PROJECT_ID.supabase.co",
+      "ApiKey": "YOUR_SUPABASE_SERVICE_ROLE_KEY"
+    },
+    "Qdrant": {
+      "Endpoint": "http://localhost:6333",
+      "ApiKey": "YOUR_QDRANT_API_KEY",
+      "Collection": "agentflow-patterns"
+    },
+    "Redis": {
+      "ConnectionString": "localhost:6379,password=YOUR_REDIS_PASSWORD"
+    },
+    "Infrastructure": {
+      "McpServersRepo": "https://github.com/MahmoudCalipso/McpServers.git",
+      "McpServersLocalPath": "./mcp-servers",
+      "CommunityNodesRepo": "https://github.com/MahmoudCalipso/community-nodes"
+    }
+  },
+  "AzureOpenAI": {
+    "ChatDeployment": "gpt-4o",
+    "EmbeddingsDeployment": "text-embedding-3-small",
+    "Endpoint": "https://YOUR_AZURE_OPENAI_ENDPOINT.openai.azure.com/",
+    "Key": "YOUR_AZURE_OPENAI_KEY"
+  }
+}

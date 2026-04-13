@@ -127,11 +127,32 @@ builder.Services.AddSingleton<AgentFlow.Backend.Sandbox.WasmCapabilityPolicy>();
 // AI Copilot
 builder.Services.AddSingleton<AgentFlow.Backend.Core.AI.IAiCopilotService, AgentFlow.Backend.Core.AI.AiCopilotService>();
 
-// Core Infrastructure (Nodes & Sandbox)
+// Dynamic Node Discovery & MCP Infrastructure
+builder.Services.AddSingleton<NodeDiscoveryService>();
 builder.Services.AddSingleton<AgentFlow.Backend.Mcp.IMcpMetadataCache, AgentFlow.Backend.Mcp.SupabaseMcpMetadataCache>();
 builder.Services.AddSingleton<AgentFlow.Backend.Mcp.McpAutoRegistrar>();
 builder.Services.AddSingleton<AgentFlow.Backend.Sandbox.WasmModuleCache>(sp => 
     new AgentFlow.Backend.Sandbox.WasmModuleCache(Path.Combine(builder.Environment.ContentRootPath, "wasm_cache")));
+
+// Initial Node Registration (Populate Discovery Service)
+builder.Services.AddHostedService(sp => {
+    var discovery = sp.GetRequiredService<NodeDiscoveryService>();
+    var registrar = sp.GetRequiredService<McpAutoRegistrar>();
+    
+    // Native Primaries
+    discovery.RegisterNode(new AgentFlow.Backend.Nodes.Triggers.WebhookTriggerNode(null!, null!, null!));
+    discovery.RegisterNode(new AgentFlow.Backend.Nodes.Triggers.ScheduleTriggerNode(null!, null!, null!));
+    discovery.RegisterNode(new AgentFlow.Backend.Nodes.Logic.ConditionNode(null!, null!, null!));
+    discovery.RegisterNode(new AgentFlow.Backend.Nodes.Logic.LoopNode(null!, null!, null!));
+    discovery.RegisterNode(new AgentFlow.Backend.Nodes.Data.MergeNode(null!, null!, null!));
+    discovery.RegisterNode(new AgentFlow.Backend.Nodes.Data.StreamJsonNode(null!, null!, null!));
+    discovery.RegisterNode(new AgentFlow.Backend.Sandbox.WasmCodeNode(null!, null!, null!));
+    
+    // Start dynamic discovery
+    _ = registrar.RegisterAllAsync(builder.Services, CancellationToken.None);
+    
+    return null!; // Placeholder for background service if needed
+});
 
 // Triggers & Engines
 builder.Services.AddSingleton<AgentFlow.Backend.Core.Triggers.WebhookIngress>();

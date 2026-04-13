@@ -8,7 +8,9 @@ using AgentFlow.Backend.Core.Graph;
 using AgentFlow.Backend.Core.State;
 using AgentFlow.Backend.Core.Observability;
 using AgentFlow.Backend.Api;
+using AgentFlow.Backend.Marketplace;
 using System.Collections.Generic;
+using System.Text.Json;
 
 namespace AgentFlow.Backend.Core.Serialization;
 
@@ -43,6 +45,10 @@ namespace AgentFlow.Backend.Core.Serialization;
 [JsonSerializable(typeof(IDictionary<string, object>))]
 [JsonSerializable(typeof(IDictionary<string, object?>))]
 [JsonSerializable(typeof(Dictionary<string, object?>))]
+[JsonSerializable(typeof(NodePackage))]
+[JsonSerializable(typeof(JsonElement))]
+[JsonSerializable(typeof(McpToolCallRequest))]
+[JsonSerializable(typeof(McpToolCallResponse))]
 [JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase, WriteIndented = false)]
 public partial class AgentFlowJsonContext : JsonSerializerContext
 {

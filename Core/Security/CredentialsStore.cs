@@ -1,8 +1,9 @@
 using System;
-using System.Collections.Generic;
 using System.Text.Json;
+using System.Text.Json.Serialization.Metadata;
 using System.Threading;
 using System.Threading.Tasks;
+using AgentFlow.Backend.Core.Serialization;
 using AgentFlow.Backend.Core.State;
 
 namespace AgentFlow.Backend.Core.Security;
@@ -26,11 +27,13 @@ public sealed class CredentialsStore : ICredentialsStore {
         if (string.IsNullOrEmpty(encrypted)) return null;
 
         var decrypted = _encryption.Decrypt(encrypted);
-        return JsonSerializer.Deserialize<T>(decrypted);
+        var typeInfo = (JsonTypeInfo<T>)AgentFlowJsonContext.Default.GetTypeInfo(typeof(T))!;
+        return JsonSerializer.Deserialize(decrypted, typeInfo);
     }
 
     public async Task SaveCredentialsAsync<T>(string id, T data, CancellationToken ct) where T : class {
-        var json = JsonSerializer.Serialize(data);
+        var typeInfo = (JsonTypeInfo<T>)AgentFlowJsonContext.Default.GetTypeInfo(typeof(T))!;
+        var json = JsonSerializer.Serialize(data, typeInfo);
         var encrypted = _encryption.Encrypt(json);
         await _stateStore.SetAsync("system", $"creds:{id}", encrypted, ct);
     }

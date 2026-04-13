@@ -15,8 +15,9 @@ public sealed class SupabaseClientFactory : ISupabaseClientFactory
 
     public SupabaseClientFactory(IConfiguration config)
     {
-        _url = config["SUPABASE_URL"] ?? throw new InvalidOperationException("Missing SUPABASE_URL");
-        _key = config["SUPABASE_KEY"] ?? throw new InvalidOperationException("Missing SUPABASE_KEY");
+        var section = config.GetSection("SupabaseConnection");
+        _url = section["Url"] ?? throw new InvalidOperationException("Missing SupabaseConnection:Url");
+        _key = section["Key"] ?? throw new InvalidOperationException("Missing SupabaseConnection:Key");
     }
 
     public Client CreateClient()

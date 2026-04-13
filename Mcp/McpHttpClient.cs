@@ -22,7 +22,12 @@ public sealed class McpHttpClient : IMcpClient
 
     public async Task<McpResponse> CallToolAsync(string tool, IDictionary<string, object?> args, CancellationToken ct = default)
     {
-        var response = await _http.PostAsJsonAsync($"/tools/{tool}/execute", args, AgentFlowJsonContext.Default.IDictionaryStringObject, ct);
+        var request = new HttpRequestMessage(HttpMethod.Post, $"/tools/{tool}/execute") {
+            Content = JsonContent.Create(args, AgentFlowJsonContext.Default.IDictionaryStringObject)
+        };
+        request.Headers.Add("X-MCP-API-KEY", Environment.GetEnvironmentVariable("MCP_INTERNAL_API_KEY") ?? "agentflow-dev-secret");
+        
+        using var response = await _http.SendAsync(request, ct);
         response.EnsureSuccessStatusCode();
         var result = await response.Content.ReadFromJsonAsync<McpResponse>(AgentFlowJsonContext.Default.McpResponse, ct);
         return result ?? new McpResponse(new List<McpContent>());
@@ -30,7 +35,12 @@ public sealed class McpHttpClient : IMcpClient
 
     public async Task<IEnumerable<McpTool>> ListToolsAsync(CancellationToken ct = default)
     {
-        var tools = await _http.GetFromJsonAsync<IEnumerable<McpTool>>("/tools", AgentFlowJsonContext.Default.IEnumerableMcpTool, ct);
+        var request = new HttpRequestMessage(HttpMethod.Get, "/tools");
+        request.Headers.Add("X-MCP-API-KEY", Environment.GetEnvironmentVariable("MCP_INTERNAL_API_KEY") ?? "agentflow-dev-secret");
+        
+        using var response = await _http.SendAsync(request, ct);
+        response.EnsureSuccessStatusCode();
+        var tools = await response.Content.ReadFromJsonAsync<IEnumerable<McpTool>>(AgentFlowJsonContext.Default.IEnumerableMcpTool, ct);
         return tools ?? Array.Empty<McpTool>();
     }
 

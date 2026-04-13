@@ -1,7 +1,5 @@
 using System;
-using System.IO;
 using System.Net.Http;
-using System.Security.Cryptography;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
@@ -23,76 +21,45 @@ public sealed class MarketplaceRegistry
 {
     private readonly IHttpClientFactory _http;
     private readonly ILogger<MarketplaceRegistry> _log;
-    private readonly string _cacheDir;
+    private readonly string _baseUrl;
 
-    public MarketplaceRegistry(IHttpClientFactory http, ILogger<MarketplaceRegistry> log)
+    public MarketplaceRegistry(IHttpClientFactory http, Microsoft.Extensions.Logging.ILogger<MarketplaceRegistry> log, Microsoft.Extensions.Configuration.IConfiguration config)
     {
         _http = http;
         _log = log;
-        _cacheDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "agentflow", "packages");
-        Directory.CreateDirectory(_cacheDir);
+        _baseUrl = config["AgentFlow:CommunityNodesUrl"] ?? "https://raw.githubusercontent.com/MahmoudCalipso/community-nodes/main/packages";
     }
 
     public async Task<JsonElement> GetIndexAsync(CancellationToken ct)
     {
         var client = _http.CreateClient("agentflow-default");
-        var indexUrl = "https://raw.githubusercontent.com/MahmoudCalipso/community-nodes/main/packages/index.json";
+        var indexUrl = $"{_baseUrl}/index.json";
         using var resp = await client.GetAsync(indexUrl, ct);
         resp.EnsureSuccessStatusCode();
         var json = await resp.Content.ReadAsStringAsync(ct);
-        return JsonSerializer.Deserialize<JsonElement>(json);
+        return JsonSerializer.Deserialize<JsonElement>(json, AgentFlowJsonContext.Default.JsonElement);
     }
 
     public async Task<NodePackage> DownloadAndVerifyAsync(string packageId, string version, CancellationToken ct)
     {
         var client = _http.CreateClient("agentflow-default");
-        _log.LogInformation("Downloading marketplace package {PackageId}@{Version}", packageId, version);
+        _log.LogInformation("Fetching metadata for marketplace package {PackageId}@{Version}", packageId, version);
 
-        // Solution: Use a free GitHub repository as the community registry!
-        // Anyone can contribute nodes by opening a PR to this repo. AgentFlow natively downloads the manifest directly from GitHub.
-        var manifestUrl = $"https://raw.githubusercontent.com/MahmoudCalipso/community-nodes/main/packages/{packageId}/{version}/manifest.json";
+        var manifestUrl = $"{_baseUrl}/{packageId}/{version}/manifest.json";
         using var manifestResp = await client.GetAsync(manifestUrl, ct);
         if (!manifestResp.IsSuccessStatusCode)
         {
-            throw new InvalidOperationException($"Package {packageId}@{version} not found in the GitHub Community Registry (HTTP {(int)manifestResp.StatusCode}).");
+            throw new InvalidOperationException($"Package {packageId}@{version} not found in the community registry (HTTP {(int)manifestResp.StatusCode}).");
         }
 
         var manifestJson = await manifestResp.Content.ReadAsStringAsync(ct);
-        var package = JsonSerializer.Deserialize<NodePackage>(manifestJson)
+        var package = JsonSerializer.Deserialize<NodePackage>(manifestJson, AgentFlowJsonContext.Default.NodePackage)
             ?? throw new InvalidOperationException("Invalid package manifest.");
 
-        var cachedPath = Path.Combine(_cacheDir, $"{packageId}-{version}.zip");
-
-        if (!File.Exists(cachedPath))
-        {
-            using var packageResp = await client.GetAsync(package.DownloadUrl, ct);
-            packageResp.EnsureSuccessStatusCode();
-            var bytes = await packageResp.Content.ReadAsByteArrayAsync(ct);
-
-            VerifyChecksum(bytes, package.ChecksumSha256, packageId, version);
-
-            await File.WriteAllBytesAsync(cachedPath, bytes, ct);
-            _log.LogInformation("Package {PackageId}@{Version} downloaded and verified", packageId, version);
-        }
-        else
-        {
-            var cached = await File.ReadAllBytesAsync(cachedPath, ct);
-            VerifyChecksum(cached, package.ChecksumSha256, packageId, version);
-            _log.LogDebug("Package {PackageId}@{Version} loaded from cache", packageId, version);
-        }
+        // In the new service-based architecture, we no longer install files locally.
+        // We simply return the package information for the UI to display or the orchestrator to use.
+        _log.LogInformation("Metadata for package {PackageId}@{Version} retrieved successfully", packageId, version);
 
         return package;
-    }
-
-    private void VerifyChecksum(byte[] data, string expectedSha256, string packageId, string version)
-    {
-        var actualHash = Convert.ToHexString(SHA256.HashData(data)).ToLowerInvariant();
-        var expected = expectedSha256.ToLowerInvariant();
-
-        if (!actualHash.Equals(expected, StringComparison.Ordinal))
-        {
-            _log.LogError("Checksum mismatch for {PackageId}@{Version}: expected {Expected}, got {Actual}", packageId, version, expected, actualHash);
-            throw new CryptographicException($"Package {packageId}@{version} failed integrity check. Download may be corrupted or tampered.");
-        }
     }
 }
